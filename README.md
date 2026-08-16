@@ -44,6 +44,6 @@ Block: `Mamba1Block` — `in_proj` → depthwise **causal** `conv1d` → SiLU �
 ## Run
 
 ```bash
-python demo.py
+python main.py
 python -m pytest test_mamba.py -q
 ```
