@@ -41,6 +41,31 @@ Block: `Mamba1Block` — `in_proj` → depthwise **causal** `conv1d` → SiLU �
 - [`papers/dao-gu-mamba2-ssd-2024.pdf`](papers/dao-gu-mamba2-ssd-2024.pdf) — Dao & Gu. Mamba-2 / SSD (2024) ([arXiv:2405.21060](https://arxiv.org/abs/2405.21060))
 - [`papers/gu-dao-mamba-2023.pdf`](papers/gu-dao-mamba-2023.pdf) — Gu & Dao. Mamba (2023) ([arXiv:2312.00752](https://arxiv.org/abs/2312.00752))
 
+## Compared to Mamba-2
+
+**What you learn here:**
+- Chunkwise SSD: intra-chunk quadratic form + inter-chunk state pass (Dao & Gu Listing 1)
+- Named Mamba-1 selective scan via Blelloch parallel prefix — not a silent default swap
+- Shift-task train proves the SSD mixer actually learns
+
+| | This repo | Mamba-2 (Dao & Gu 2024) |
+|---|---|---|
+| Kernel | Pure PyTorch `ssd_chunkwise` | Triton SSD + tensor cores |
+| State | Educational $N$ small | Large state, multi-head SSD |
+| Variant | `mixer="selective_scan"` named | Mamba-1 scan legacy |
+
+### Numbers (2026-08-16, Darwin 25.5.0 arm64 / Apple M5)
+
+| Metric | This repo | Baseline | Source |
+|---|---|---|---|
+| SSD vs naive max\|Δ\| | $1.91\times10^{-6}$ | — | `python main.py` |
+| SSD shift loss | 2.036 → 0.000 (40 steps) | — | same |
+| Prod SSD vs FA-2 | — | ~6× faster @ L=16K | arXiv:2405.21060 |
+
+```bash
+python main.py
+```
+
 ## Run
 
 ```bash
