@@ -8,31 +8,31 @@ Gu & Dao, *Mamba: Linear-Time Sequence Modeling with Selective State Spaces* (20
 
 ## Mamba-2 SSD (default)
 
-Scalar-times-identity \(A\) per head. Log-space steps \(a_t\) give the causal kernel
+Scalar-times-identity $A$ per head. Log-space steps $a_t$ give the causal kernel
 
-\[
+$$
 L_{ij}=1_{i\ge j}\exp\Big(\sum_{k=j+1}^{i}a_k\Big)
-\]
+$$
 
-so \(Y=(CB^\top\odot L)\,X\) inside a chunk, plus a low-rank carry of the SSM state across chunk boundaries. Four steps (Dao & Gu Listing 1 / blog Part III):
+so $Y=(CB^\top\odot L)\,X$ inside a chunk, plus a low-rank carry of the SSM state across chunk boundaries. Four steps (Dao & Gu Listing 1 / blog Part III):
 
 1. **Intra-chunk outputs** — quadratic form with `segsum` (stable, addition-only).
 2. **Chunk states** — final state per chunk assuming zero initial state (matmul).
-3. **Pass states** — 1-SS recurrence on the \(T/Q\) boundary states.
+3. **Pass states** — 1-SS recurrence on the $T/Q$ boundary states.
 4. **Output states** — map carried state into each position.
 
 Same FLOP class as a linear SSM; matmuls replace a full-length selective scan.
 
 ## Mamba-1 selective scan (named variant)
 
-Input-dependent \(\Delta,B,C\); diagonal \(A\) via \(\,A_t=\exp(-\mathrm{softplus}(\delta_t)\odot\exp(A_{\log}))\).
+Input-dependent $\Delta,B,C$; diagonal $A$ via $\,A_t=\exp(-\mathrm{softplus}(\delta_t)\odot\exp(A_{\log}))$.
 
-\[
+$$
 h_t = A_t \odot h_{t-1} + B_t \odot x_t,\qquad y_t = C_t \cdot h_t
-\]
+$$
 
 - **Oracle:** `naive_scan` sequential loop.
-- **Fast path:** Blelloch parallel prefix scan on \((a,b)\oplus(a',b')=(a'a,\; a'b+b')\).
+- **Fast path:** Blelloch parallel prefix scan on $(a,b)\oplus(a',b')=(a'a,\; a'b+b')$.
 
 Block: `Mamba1Block` — `in_proj` → depthwise **causal** `conv1d` → SiLU → `Mamba1SelectiveSSM` → SiLU gate → `out_proj`. Select with `ShiftLM(..., mixer="selective_scan")`.
 
